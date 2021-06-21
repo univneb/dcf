@@ -34,6 +34,11 @@ class DCFModal {
     }
   }
 
+  // Check if modal is to behave as non-inert
+  isNonInertModal(modal) {
+    return modal.classList.contains('dcf-non-inert-modal');
+  }
+
   /**
    * Prepend modals to body so that elements outside of modal can be made inert
    * @param {string} el: the element that we are targetting
@@ -129,26 +134,28 @@ class DCFModal {
     const preOpenEventName = `ModalPreOpenEvent_${modalId}`;
     document.dispatchEvent(new CustomEvent(preOpenEventName));
 
-    // Set elements outside of modal to be inert and hidden from screen readers
-    this.nonModals.forEach((nonModal) => {
-      if (modalWithNavToggleGroup && navToggleGroup && nonModal === navToggleGroupParent) {
-        nonModal.setAttribute('aria-hidden', 'false');
+    if (!this.isNonInertModal(thisModal)) {
+      // Set elements outside of modal to be inert and hidden from screen readers
+      this.nonModals.forEach((nonModal) => {
+        if (modalWithNavToggleGroup && navToggleGroup && nonModal === navToggleGroupParent) {
+          nonModal.setAttribute('aria-hidden', 'false');
 
-        // hide all children of navToggleGroupParent except navToggleGroup
-        const children = navToggleGroupParent.childNodes;
-        children.forEach((child) => {
-          if (child.nodeType === Node.ELEMENT_NODE) {
-            if (child === navToggleGroup) {
-              child.setAttribute('aria-hidden', 'false');
-            } else {
-              child.setAttribute('aria-hidden', 'true');
+          // hide all children of navToggleGroupParent except navToggleGroup
+          const children = navToggleGroupParent.childNodes;
+          children.forEach((child) => {
+            if (child.nodeType === Node.ELEMENT_NODE) {
+              if (child === navToggleGroup) {
+                child.setAttribute('aria-hidden', 'false');
+              } else {
+                child.setAttribute('aria-hidden', 'true');
+              }
             }
-          }
-        });
-      } else {
-        nonModal.setAttribute('aria-hidden', 'true');
-      }
-    });
+          });
+        } else {
+          nonModal.setAttribute('aria-hidden', 'true');
+        }
+      });
+    }
 
     // Prevent body from scrolling
     if (this.disableBodyScroll) {
@@ -396,7 +403,9 @@ class DCFModal {
       modalHeadings[DCFUtility.magicNumbers('int0')].id = modalHeadingId;
 
       // Append modals to body so that elements outside of modal can be hidden when modal is open
-      this.appendToBody(modal);
+      if (!this.isNonInertModal(modal)) {
+        this.appendToBody(modal);
+      }
 
       // Modals are hidden by default until JavaScript has loaded.
       // Remove `hidden` attribute, then later replace with `.dcf-invisible` to allow for modal transitions.
